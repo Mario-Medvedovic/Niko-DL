@@ -1,0 +1,84 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+#Testing notebook
+```{r}
+library(keras)
+mnist<-dataset_mnist()
+str(mnist)
+firstTrain<-mnist$train$x[1,,]
+plot(as.raster(firstTrain,max=255))
+```
+
+#Creating input data
+```{r}
+train_images <- mnist$train$x
+train_labels <- mnist$train$y
+test_images <- mnist$test$x
+test_labels <- mnist$test$y
+```
+
+#Bird Images
+```{r}
+nikoDir<-"/mnt/raid/Niko"
+imageDir<-file.path(nikoDir, "images")
+dir.create(imageDir)
+
+bluejayDir<-file.path(imageDir,"Bluejay")
+bluejayImages<-list.files(bluejayDir)
+length(bluejayImages)
+bluejayTrain<-file.path(bluejayDir,"train")
+dir.create(bluejayTrain)
+bluejayValidate<-file.path(bluejayDir,"validate")
+dir.create(bluejayValidate)
+bluejayTest<-file.path(bluejayDir,"test")
+dir.create(bluejayTest)
+
+goldfinchDir<-file.path(imageDir,"Goldfinch")
+goldfinchImages<-list.files(goldfinchDir)
+length(goldfinchImages)
+goldfinchTrain<-file.path(goldfinchDir,"train")
+dir.create(goldfinchTrain)
+goldfinchValidate<-file.path(goldfinchDir,"validate")
+dir.create(goldfinchValidate)
+goldfinchTest<-file.path(goldfinchDir,"test")
+dir.create(goldfinchTest)
+file.copy(file.path(goldfinchDir,goldfinchImages[1:45]),file.path(goldfinchTrain))
+file.copy(file.path(goldfinchDir,goldfinchImages[46:60]),file.path(goldfinchValidate))
+file.copy(file.path(goldfinchDir,goldfinchImages[61:75]),file.path(goldfinchTest))
+
+cardinalDir<-file.path(imageDir,"Cardinal")
+cardinalImages<-list.files(cardinalDir)
+length(cardinalImages)
+cardinalTrain<-file.path(cardinalDir,"train")
+dir.create(cardinalTrain)
+cardinalValidate<-file.path(cardinalDir,"validate")
+dir.create(cardinalValidate)
+cardinalTest<-file.path(cardinalDir,"test")
+dir.create(cardinalTest)
+file.copy(file.path(cardinalDir,cardinalImages[1:38]),file.path(cardinalTrain))
+file.copy(file.path(cardinalDir,cardinalImages[39:53]),file.path(cardinalValidate))
+file.copy(file.path(cardinalDir,cardinalImages[54:68]),file.path(cardinalTest))
+
+
+
+
+```
+
+#Building model
+```{r}
+model <- keras_model_sequential() %>%
+  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
+                input_shape = c(28, 28, 1)) %>%
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu")
+
+
+```
+
