@@ -26,59 +26,219 @@ test_labels <- mnist$test$y
 ```{r}
 nikoDir<-"/mnt/raid/Niko"
 imageDir<-file.path(nikoDir, "images")
-dir.create(imageDir)
 
+dir.create(imageDir)
+```
+#Blue Jay
+```{r}
 bluejayDir<-file.path(imageDir,"Bluejay")
 bluejayImages<-list.files(bluejayDir)
 length(bluejayImages)
 bluejayTrain<-file.path(bluejayDir,"train")
+
 dir.create(bluejayTrain)
+
 bluejayValidate<-file.path(bluejayDir,"validate")
+
 dir.create(bluejayValidate)
+
 bluejayTest<-file.path(bluejayDir,"test")
+
 dir.create(bluejayTest)
 
+file.copy(file.path(bluejayDir,bluejayImages[1:30]),file.path(bluejayTrain))
+file.copy(file.path(bluejayDir,bluejayImages[31:40]),file.path(bluejayValidate))
+file.copy(file.path(bluejayDir,bluejayImages[41:49]),file.path(bluejayTest))
+
+```
+```{r}
+base_dir <- "/mnt/raid/Niko/images"
+# dir.create(base_dir)
+train_dir <- file.path(base_dir, "train")
+# dir.create(train_dir)
+validation_dir <- file.path(base_dir, "validation")
+# dir.create(validation_dir)
+test_dir <- file.path(base_dir, "test")
+# dir.create(test_dir)
+
+train_Bluejay_dir <- file.path(train_dir, "Bluejay")
+# dir.create(train_Bluejay_dir)
+train_Cardinal_dir <- file.path(train_dir, "Cardinal")
+# dir.create(train_Cardinal_dir)
+validation_Bluejay_dir <- file.path(validation_dir, "Bluejay")
+# dir.create(validation_Bluejay_dir)
+validation_Cardinal_dir <- file.path(validation_dir, "Cardinal")
+# dir.create(validation_Cardinal_dir)
+test_Bluejay_dir <- file.path(test_dir, "Bluejay")
+# dir.create(test_Bluejay_dir)
+test_Cardinal_dir <- file.path(test_dir, "Cardinal")
+# dir.create(test_Cardinal_dir)
+
+# currentFiles<-list.files("/mnt/raid/Niko/images/train_Bluejay_dir")
+# currentFiles
+# currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/train")
+# currentFiles
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/train", full.names = T)
+currentFiles
+length(currentFiles)
+fnames <- paste0("Bluejay.", 1:30, ".jpg")
+file.copy(currentFiles, file.path(train_Bluejay_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/test", full.names = T)
+fnames <- paste0("Bluejay.", 31:40, ".jpg")
+file.copy(currentFiles, file.path(test_Bluejay_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/validate", full.names = T)
+fnames <- paste0("Bluejay.", 41:50, ".jpg")
+file.copy(currentFiles, file.path(validation_Bluejay_dir,fnames))
+
+
+# file.remove(currentFiles)
+
+```
+
+#Gold Finch
+```{r}
 goldfinchDir<-file.path(imageDir,"Goldfinch")
 goldfinchImages<-list.files(goldfinchDir)
 length(goldfinchImages)
 goldfinchTrain<-file.path(goldfinchDir,"train")
+
 dir.create(goldfinchTrain)
+
 goldfinchValidate<-file.path(goldfinchDir,"validate")
+
 dir.create(goldfinchValidate)
+
 goldfinchTest<-file.path(goldfinchDir,"test")
+
 dir.create(goldfinchTest)
+
 file.copy(file.path(goldfinchDir,goldfinchImages[1:45]),file.path(goldfinchTrain))
 file.copy(file.path(goldfinchDir,goldfinchImages[46:60]),file.path(goldfinchValidate))
 file.copy(file.path(goldfinchDir,goldfinchImages[61:75]),file.path(goldfinchTest))
-
+```
+#Cardinal
+```{r}
 cardinalDir<-file.path(imageDir,"Cardinal")
 cardinalImages<-list.files(cardinalDir)
 length(cardinalImages)
 cardinalTrain<-file.path(cardinalDir,"train")
+
 dir.create(cardinalTrain)
+
 cardinalValidate<-file.path(cardinalDir,"validate")
+
 dir.create(cardinalValidate)
+
 cardinalTest<-file.path(cardinalDir,"test")
 dir.create(cardinalTest)
+
 file.copy(file.path(cardinalDir,cardinalImages[1:38]),file.path(cardinalTrain))
 file.copy(file.path(cardinalDir,cardinalImages[39:53]),file.path(cardinalValidate))
 file.copy(file.path(cardinalDir,cardinalImages[54:68]),file.path(cardinalTest))
-
-
-
-
 ```
 
 #Building model
 ```{r}
 model <- keras_model_sequential() %>%
-  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
-                input_shape = c(28, 28, 1)) %>%
+  layer_conv_2d(filters = 16, kernel_size = c(3, 3), activation = "relu",
+                input_shape = c(50, 50, 3)) %>%
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu") %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu")
+  layer_flatten() %>%
+  layer_dense(units = 64, activation = "relu") %>%
+  layer_dense(units = 1, activation = "sigmoid")
 
+model %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(lr = 1e-4),
+  metrics = c("acc")
+)
+```
+```{r}
+train_datagen <- image_data_generator(rescale = 1/255)             
+validation_datagen <- image_data_generator(rescale = 1/255)        
+
+train_generator <- flow_images_from_directory(
+  train_dir,                                                       
+  train_datagen,                                                   
+  target_size = c(150, 150),                                       
+  batch_size = 20,                                                 
+  class_mode = "binary"
+)
+
+validation_generator <- flow_images_from_directory(
+  validation_dir,
+  validation_datagen,
+  target_size = c(150, 150),
+  batch_size = 20,
+  class_mode = "binary"
+)
 
 ```
+
+
+##Creating files to train. Organizing to use code on page 
+
+```{r, echo=TRUE}
+base_dir <- "/mnt/raid/Niko/images"
+
+train_dir <- file.path(base_dir, "train")
+validation_dir <- file.path(base_dir, "validation")
+test_dir <- file.path(base_dir, "test")
+
+train_Bluejay_dir <- file.path(train_dir, "Bluejay")
+train_Cardinal_dir <- file.path(train_dir, "Cardinal")
+validation_Bluejay_dir <- file.path(validation_dir, "Bluejay")
+validation_Cardinal_dir <- file.path(validation_dir, "Cardinal")
+test_Bluejay_dir <- file.path(test_dir, "Bluejay")
+test_Cardinal_dir <- file.path(test_dir, "Cardinal")
+
+# dir.create(base_dir)
+# dir.create(train_dir)
+# dir.create(validation_dir)
+# dir.create(test_dir)
+# dir.create(train_Bluejay_dir)
+# dir.create(train_Cardinal_dir)
+# dir.create(validation_Bluejay_dir)
+# dir.create(validation_Cardinal_dir)
+# dir.create(test_Bluejay_dir)
+# dir.create(test_Cardinal_dir)
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/train", full.names = T)
+fnames <- paste0("Bluejay.", 1:30, ".jpg")
+file.copy(currentFiles, 
+          file.path(train_Bluejay_dir,fnames)) 
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/test", full.names = T)
+fnames <- paste0("Bluejay.", 31:40, ".jpg")
+file.copy(currentFiles, 
+          file.path(test_Bluejay_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Bluejay/validate", full.names = T)
+fnames <- paste0("Bluejay.", 41:49, ".jpg")
+file.copy(currentFiles, 
+          file.path(validation_Bluejay_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Cardinal/train", full.names = T)
+fnames <- paste0("Cardinal.", 1:38, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(train_Cardinal_dir))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Cardinal/validate", full.names = T)
+fnames <- paste0("Cardinal.", 39:53, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(validation_Cardinal_dir)) 
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Cardinal/test", full.names = T)
+fnames <- paste0("Cardinal.", 54:68, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(test_Cardinal_dir))
+
+```
+
 
