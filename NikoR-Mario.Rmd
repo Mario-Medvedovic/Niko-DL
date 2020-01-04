@@ -4,8 +4,8 @@ output: html_notebook
 editor_options: 
   chunk_output_type: inline
 ---
-
-#Testing notebook
+#MNIST example
+##Testing notebook
 ```{r}
 library(keras)
 mnist<-dataset_mnist()
@@ -14,12 +14,255 @@ firstTrain<-mnist$train$x[1,,]
 plot(as.raster(firstTrain,max=255))
 ```
 
-#Creating input data
+##Creating input data
 ```{r}
 train_images <- mnist$train$x
 train_labels <- mnist$train$y
 test_images <- mnist$test$x
 test_labels <- mnist$test$y
+```
+
+##Simple NN
+###Building simple neural network model
+```{r}
+network <- keras_model_sequential() %>% 
+  layer_dense(units = 512, activation = "relu", input_shape = c(28 * 28)) %>% 
+  layer_dense(units = 10, activation = "softmax")
+```
+###Compiling
+```{r}
+network %>% compile(
+  optimizer = "rmsprop",
+  loss = "categorical_crossentropy",
+  metrics = c("accuracy")
+)
+```
+
+###Reshaping and normalizing data for simple neural network. Each image is a vector of pixels, labels are categorical
+```{r}
+train_images <- array_reshape(train_images, c(60000, 28 * 28))
+train_images <- train_images / 255
+
+test_images <- array_reshape(test_images, c(10000, 28 * 28))
+test_images <- test_images / 255
+
+train_labels <- to_categorical(train_labels)
+test_labels <- to_categorical(test_labels)
+```
+
+###Training the network
+```{r, echo=TRUE, results='hide'}
+network %>% fit(train_images, train_labels, epochs = 5, batch_size = 128)
+```
+###Accuracy metrics for the test images
+```{r}
+metrics <- network %>% evaluate(test_images, test_labels, verbose = 0)
+metrics
+```
+
+##Convnets
+###Model - convolutional layers
+```{r}
+model <- keras_model_sequential() %>% 
+  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
+                input_shape = c(28, 28, 1)) %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu")
+
+summary(model)
+```
+
+###Model - densly connected classifier network
+```{r}
+model <- model %>% 
+  layer_flatten() %>% 
+  layer_dense(units = 64, activation = "relu") %>% 
+  layer_dense(units = 10, activation = "softmax")
+
+summary(model)
+```
+
+###Reshaping data, compiling, fitting and testing
+```{r, echo=TRUE, results='hide'}
+mnist <- dataset_mnist()
+c(c(train_images, train_labels), c(test_images, test_labels)) %<-% mnist
+
+train_images <- array_reshape(train_images, c(60000, 28, 28, 1))
+train_images <- train_images / 255
+
+test_images <- array_reshape(test_images, c(10000, 28, 28, 1))
+test_images <- test_images / 255
+
+train_labels <- to_categorical(train_labels)
+test_labels <- to_categorical(test_labels)
+
+model %>% compile(
+  optimizer = "rmsprop",
+  loss = "categorical_crossentropy",
+  metrics = c("accuracy")
+)
+              
+model %>% fit(
+  train_images, train_labels, 
+  epochs = 5, batch_size=64
+)
+```
+
+###Evaluating on test dataset
+
+```{r, echo=TRUE, results='hide'}
+results <- model %>% evaluate(test_images, test_labels)
+results
+```
+
+```{r}
+```
+
+
+
+
+#Cats and dogs
+##Organize downloaded images
+```{r, echo=TRUE, results='hide'}
+original_dataset_dir <- "~/Downloads/train"
+
+base_dir <- "~/Downloads/cats_and_dogs_small"
+dir.create(base_dir)
+
+train_dir <- file.path(base_dir, "train")
+dir.create(train_dir)
+validation_dir <- file.path(base_dir, "validation")
+dir.create(validation_dir)
+test_dir <- file.path(base_dir, "test")
+dir.create(test_dir)
+
+train_cats_dir <- file.path(train_dir, "cats")
+dir.create(train_cats_dir)
+
+train_dogs_dir <- file.path(train_dir, "dogs")
+dir.create(train_dogs_dir)
+
+validation_cats_dir <- file.path(validation_dir, "cats")
+dir.create(validation_cats_dir)
+
+validation_dogs_dir <- file.path(validation_dir, "dogs")
+dir.create(validation_dogs_dir)
+
+test_cats_dir <- file.path(test_dir, "cats")
+dir.create(test_cats_dir)
+
+test_dogs_dir <- file.path(test_dir, "dogs")
+dir.create(test_dogs_dir)
+
+fnames <- paste0("cat.", 1:1000, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames), 
+          file.path(train_cats_dir)) 
+
+fnames <- paste0("cat.", 1001:1500, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames), 
+          file.path(validation_cats_dir))
+
+fnames <- paste0("cat.", 1501:2000, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(test_cats_dir))
+
+fnames <- paste0("dog.", 1:1000, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(train_dogs_dir))
+
+fnames <- paste0("dog.", 1001:1500, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(validation_dogs_dir)) 
+
+fnames <- paste0("dog.", 1501:2000, ".jpg")
+file.copy(file.path(original_dataset_dir, fnames),
+          file.path(test_dogs_dir))
+```
+
+
+
+
+
+##Convnet model
+```{r}
+library(keras)
+
+model <- keras_model_sequential() %>% 
+  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
+                input_shape = c(150, 150, 3)) %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_conv_2d(filters = 128, kernel_size = c(3, 3), activation = "relu") %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_conv_2d(filters = 128, kernel_size = c(3, 3), activation = "relu") %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_flatten() %>% 
+  layer_dense(units = 512, activation = "relu") %>% 
+  layer_dense(units = 1, activation = "sigmoid")
+
+summary(model)
+```
+##Compiling model
+```{r}
+model %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(lr = 1e-4),
+  metrics = c("acc")
+)
+```
+## Data preprocessing
+```{r}
+# All images will be rescaled by 1/255
+train_datagen <- image_data_generator(rescale = 1/255)
+validation_datagen <- image_data_generator(rescale = 1/255)
+
+train_generator <- flow_images_from_directory(
+  # This is the target directory
+  train_dir,
+  # This is the data generator
+  train_datagen,
+  # All images will be resized to 150x150
+  target_size = c(150, 150),
+  batch_size = 20,
+  # Since we use binary_crossentropy loss, we need binary labels
+  class_mode = "binary"
+)
+
+validation_generator <- flow_images_from_directory(
+  validation_dir,
+  validation_datagen,
+  target_size = c(150, 150),
+  batch_size = 20,
+  class_mode = "binary"
+)
+```
+
+##Testing image generator
+```{r}
+batch <- generator_next(train_generator)
+str(batch)
+
+firstTrain<-batch[[1]][1,,,]
+plot(as.raster(firstTrain,max=1))
+```
+##Training the model
+```{r, echo=TRUE, results='hide'}
+history <- model %>% fit_generator(
+  train_generator,
+  steps_per_epoch = 100,
+  epochs = 5,
+  validation_data = validation_generator,
+  validation_steps = 50
+)
+```
+
+It is good practice to always save your models after training:
+
+```{r}
+model %>% save_model_hdf5("cats_and_dogs_small_1.h5")
 ```
 
 #Bird Images
