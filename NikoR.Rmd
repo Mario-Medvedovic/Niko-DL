@@ -77,6 +77,14 @@ test_Bluejay_dir <- file.path(test_dir, "Bluejay")
 # dir.create(test_Bluejay_dir)
 test_Cardinal_dir <- file.path(test_dir, "Cardinal")
 # dir.create(test_Cardinal_dir)
+
+train_Goldfinch_dir <- file.path(train_dir, "Goldfinch")
+validation_Goldfinch_dir <- file.path(validation_dir, "Goldfinch")
+test_Goldfinch_dir <- file.path(test_dir, "Goldfinch")
+
+# dir.create(train_Goldfinch_dir)
+# dir.create(validation_Goldfinch_dir)
+# dir.create(test_Goldfinch_dir)
 ```
 
 ##Copying images bluejay
@@ -124,6 +132,31 @@ file.copy(currentFiles, file.path(validation_Cardinal_dir,fnames))
 # file.remove(currentFiles)
 
 ```
+##Copying images Goldfinch
+```{r}
+currentFiles<-list.files("/mnt/raid/Niko/images/Goldfinch/train", full.names = T)
+length(currentFiles)
+fnames <- paste0("Goldfinch.", 1:45, ".jpg")
+file.copy(currentFiles, file.path(train_Goldfinch_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Goldfinch/test", full.names = T)
+length(currentFiles)
+fnames <- paste0("Goldfinch.", 46:60, ".jpg")
+file.copy(currentFiles, file.path(test_Goldfinch_dir,fnames))
+
+currentFiles<-list.files("/mnt/raid/Niko/images/Goldfinch/validate", full.names = T)
+length(currentFiles)
+fnames <- paste0("Goldfinch.", 61:75, ".jpg")
+file.copy(currentFiles, file.path(validation_Goldfinch_dir,fnames))
+# file.remove(currentFiles)
+
+```
+
+
+
+
+
+
 #Building model
 ```{r}
 model <- keras_model_sequential() %>%
@@ -136,14 +169,14 @@ model <- keras_model_sequential() %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_flatten() %>%
   layer_dense(units = 64, activation = "relu") %>%
-  layer_dense(units = 1, activation = "sigmoid")
+  layer_dense(units = 1, activation = "softmax")
 
 model %>% compile(
-  loss = "binary_crossentropy",
+  loss = "categorical_crossentropy",
   optimizer = optimizer_rmsprop(lr = 1e-4),
   metrics = c("acc")
 )
- ```
+```
 
 #Transforming images and feeding them into model
 ```{r}
@@ -154,29 +187,41 @@ train_generator <- flow_images_from_directory(
   train_dir,                                                       
   train_datagen,                                                   
   target_size = c(50, 50),                                       
-  batch_size = 68,                                                 
-  class_mode = "binary"
+  batch_size = 113,                                                 
+  class_mode = "categorical"
 )
 
 validation_generator <- flow_images_from_directory(
   validation_dir,
   validation_datagen,
   target_size = c(50, 50),
-  batch_size = 25,
-  class_mode = "binary"
+  batch_size = 40,
+  class_mode = "categorical"
 )
 
 ```
 ##Testing image generator
 ```{r}
-batch <- generator_next(validation_generator)
-str(batch)
+batch_validate <- generator_next(validation_generator)
+str(batch_validate)
 
-firstTrain<-batch[[1]][3,,,]
-# par(mfrow=c(17,4))
-for(i in 1:25) {
-  plot(as.raster(batch[[1]][i,,,],max=1))
+png(filename = "/mnt/raid/Niko/allvalidation.png",width=2000,height = 2000)
+ par(mfrow=c(7,7))
+for(i in 1:dim(batch_validate[[2]])) {
+  plot(as.raster(batch_validate[[1]][i,,,],max=1))
 }
+dev.off()
+
+
+batch_train <- generator_next(train_generator)
+str(batch_train)
+
+png(filename = "/mnt/raid/Niko/alltrain.png",width=2000,height = 5000)
+ par(mfrow=c(12,10))
+for(i in 1:dim(batch_train[[2]])) {
+  plot(as.raster(batch_train[[1]][i,,,],max=1))
+}
+dev.off()
 ```
 ##Training the model
 ```{r, echo=TRUE, results='hide'}
