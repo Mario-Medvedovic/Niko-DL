@@ -227,11 +227,26 @@ dev.off()
 ```{r, echo=TRUE, results='hide'}
 history <- model %>% fit_generator(
   generator=train_generator,
-  steps_per_epoch = 100,
+  steps_per_epoch = 50,
   epochs = 20,
   validation_data = validation_generator,
   validation_steps = 20
 )
+
+model %>% save_model_hdf5("/mnt/raid/Niko/NikoModelE20SPE50VS20.h5")
+save(history,file="/mnt/raid/Niko/NikoModelE20SPE50VS20_history.rda")
+```
+#Plotting numbers
+```{r}
+nimages<-c(length(list.files("/mnt/raid/Niko/images/Bluejay/train", full.names = T)),length(list.files("/mnt/raid/Niko/images/Bluejay/test", full.names = T)),length(list.files("/mnt/raid/Niko/images/Bluejay/validate", full.names = T)),length(list.files("/mnt/raid/Niko/images/Cardinal/train", full.names = T)),length(list.files("/mnt/raid/Niko/images/Cardinal/test", full.names = T)),length(list.files("/mnt/raid/Niko/images/Cardinal/validate", full.names = T)),length(list.files("/mnt/raid/Niko/images/Goldfinch/train", full.names = T)),length(list.files("/mnt/raid/Niko/images/Goldfinch/test", full.names = T)),length(list.files("/mnt/raid/Niko/images/Goldfinch/validate", full.names = T))
+)
+role<-c("train","test","validate","train","test","validate","train","test","validate")
+birdtype<-c("Bluejay","Bluejay","Bluejay","Cardinal","Cardinal","Cardinal","Goldfinch","Goldfinch","Goldfinch")
+birdtable<-data.frame(bird_type=birdtype,Role=role,N_images=nimages,stringsAsFactors=F)
+
+library(ggplot2)
+ggplot(data.m, aes(Names, value)) +   
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
 ```
 
 
