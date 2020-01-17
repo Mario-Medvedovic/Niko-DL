@@ -86,16 +86,16 @@ model %>% compile(
 ##Training the model
 ```{r, echo=TRUE, results='hide'}
 require(keras)
-history_m1 <- model %>% fit_generator(
+history_m2 <- model %>% fit_generator(
   generator=train_generator,
   steps_per_epoch = 1,
-  epochs = 10000,
+  epochs = 100,
   validation_data = validation_generator,
   validation_steps = 1
 )
 
-model %>% save_model_hdf5("/mnt/raid/Niko/NikoModel_1_E20SPE50VS20.h5")
-save(history_m2,file="/mnt/raid/Niko/NikoModel_1_E20SPE50VS20_history.rda")
+model %>% save_model_hdf5("/mnt/raid/Niko/NikoModel_2b_E1000SPE1VS1.h5")
+save(history_m2,file="/mnt/raid/Niko/NikoModel_2_E1000SPE1VS1_history.rda")
 ```
 
 
